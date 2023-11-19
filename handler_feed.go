@@ -9,6 +9,20 @@ import (
 	"time"
 )
 
+func (c config) handlerGetFeed(writer http.ResponseWriter, request *http.Request) {
+	feeds, err := c.DB.GetAllFeeds(request.Context())
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "Internal server error")
+		fmt.Println("Error getting feed: " + err.Error())
+		return
+	}
+	feedsDto := make([]FeedDto, 0)
+	for _, f := range feeds {
+		feedsDto = append(feedsDto, databaseFeedToFeedDto(f))
+	}
+	respondWithJSON(writer, http.StatusOK, feedsDto)
+}
+
 func (c config) handlerPostFeed(writer http.ResponseWriter, request *http.Request, dbUsr database.User) {
 	type requestBody struct {
 		Name string `json:"name"`

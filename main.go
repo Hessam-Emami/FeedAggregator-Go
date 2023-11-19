@@ -44,6 +44,9 @@ func main() {
 	v1Router.Get("/users", config.handlerGetUserByApiKey)
 
 	v1Router.Post("/feeds", config.middlewareAuth(config.handlerPostFeed))
+	v1Router.Get("/feeds", config.handlerGetFeed)
+
+	v1Router.Post("/feed_follows", config.middlewareAuth(config.handlerPostFeedFollow))
 
 	mainRouter.Mount("/v1", v1Router)
 
