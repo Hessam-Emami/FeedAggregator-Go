@@ -2,11 +2,11 @@ package main
 
 import (
 	"FeedAggregator/internal/database"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
+	"strings"
 	"time"
 )
 import (
@@ -46,6 +46,7 @@ func main() {
 	v1Router.Get("/readiness", handlerReadiness)
 	v1Router.Get("/err", handlerError)
 	v1Router.Post("/users", config.handlerPostUser)
+	v1Router.Get("/users", config.handlerGetUserByApiKey)
 	mainRouter.Mount("/v1", v1Router)
 
 	srv := http.Server{
@@ -57,15 +58,34 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 }
 
+func (c config) handlerGetUserByApiKey(writer http.ResponseWriter, request *http.Request) {
+
+	authHeader := request.Header.Get("Authorization")
+	if len(authHeader) == 0 {
+		respondWithError(writer, http.StatusBadRequest, "Missing authorization header")
+		return
+	}
+
+	splitted := strings.Split(authHeader, " ")
+	if len(splitted) != 2 || splitted[0] != "ApiKey" {
+		respondWithError(writer, http.StatusBadRequest, "Missing authorization header")
+		return
+	}
+
+	apiKey := splitted[1]
+	usr, err := c.DB.GetUserByApiKey(request.Context(), apiKey)
+
+	if err != nil {
+		respondWithError(writer, http.StatusNotFound, "Couldn't find the user")
+		return
+	}
+
+	respondWithJSON(writer, http.StatusOK, databaseUserToUserDto(usr))
+}
+
 func (c config) handlerPostUser(writer http.ResponseWriter, request *http.Request) {
 	type requestBody struct {
 		Name string `json:"name"`
-	}
-	type responseBody struct {
-		Id        string    `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Name      string    `json:"name"`
 	}
 
 	body := requestBody{}
@@ -88,7 +108,7 @@ func (c config) handlerPostUser(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	usr, err := c.DB.CreateUser(context.Background(), database.CreateUserParams{
+	usr, err := c.DB.CreateUser(request.Context(), database.CreateUserParams{
 		ID:        uUID.String(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -100,13 +120,7 @@ func (c config) handlerPostUser(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	rBody := responseBody{
-		Id:        usr.ID,
-		CreatedAt: usr.CreatedAt,
-		UpdatedAt: usr.UpdatedAt,
-		Name:      usr.Name,
-	}
-	respondWithJSON(writer, http.StatusOK, rBody)
+	respondWithJSON(writer, http.StatusOK, databaseUserToUserDto(usr))
 }
 
 func handlerReadiness(writer http.ResponseWriter, request *http.Request) {
