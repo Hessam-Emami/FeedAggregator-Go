@@ -5,6 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/xml"
+	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"log"
 	"net/http"
@@ -50,8 +52,33 @@ func scrapeFeed(db *database.Queries, wg *sync.WaitGroup, feed database.Feed) {
 		log.Printf("Couldn't collect feed %s: %v", feed.Name, err)
 		return
 	}
+
 	for _, item := range feedData.Channel.Item {
-		log.Println("Found post", item.Title)
+		// Define the layout of your timestamp string
+		layout := "Mon, 02 Jan 2006 15:04:05 -0700"
+
+		// Parse the string into a time.Time object
+		parsedTime, err := time.Parse(layout, item.PubDate)
+		if err != nil {
+			fmt.Println("Error parsing time:", err)
+			return
+		}
+
+		uUID, err := uuid.NewUUID()
+		if err != nil {
+			fmt.Println("Error creating uuid: " + err.Error())
+			return
+		}
+		post, err := db.CreatePost(context.Background(), database.CreatePostParams{
+			ID: uUID.String(), CreatedAt: time.Now(), UpdatedAt: time.Now(),
+			Title: item.Title, Url: item.Link, Description: sql.NullString{String: item.Description, Valid: true},
+			PublishedAt: sql.NullTime{Time: parsedTime, Valid: true},
+			FeedID:      feed.ID,
+		})
+		if err != nil {
+			fmt.Println("Error creating post: " + err.Error())
+		}
+		log.Println("Post created: " + item.Title + " - " + post.ID)
 	}
 	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feedData.Channel.Item))
 }

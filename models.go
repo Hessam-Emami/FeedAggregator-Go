@@ -68,3 +68,27 @@ func databaseFeedFollowTo(dbFeed database.FeedFollow) FeedFollowDto {
 		FeedID:    dbFeed.FeedID,
 	}
 }
+
+type PostDto struct {
+	Id          string    `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+	Description string    `json:"description"`
+	PublishedAt time.Time `json:"published_at"`
+	FeedID      string    `json:"feed_id"`
+}
+
+func databasePostToPostDto(dbPost database.Post) PostDto {
+	return PostDto{
+		Id:          dbPost.ID,
+		CreatedAt:   dbPost.CreatedAt,
+		UpdatedAt:   dbPost.UpdatedAt,
+		FeedID:      dbPost.FeedID,
+		Title:       dbPost.Title,
+		Url:         dbPost.Url,
+		Description: dbPost.Description.String,
+		PublishedAt: dbPost.PublishedAt.Time,
+	}
+}
