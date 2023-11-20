@@ -24,22 +24,30 @@ func databaseUserToUserDto(dbUsr database.User) UserDto {
 }
 
 type FeedDto struct {
-	Id        string    `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Name      string    `json:"name"`
-	Url       string    `json:"url"`
-	UserId    string    `json:"user_id"`
+	Id            string     `json:"id"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	Name          string     `json:"name"`
+	Url           string     `json:"url"`
+	UserId        string     `json:"user_id"`
+	LastFetchedAt *time.Time `json:"last_fetched_at"`
 }
 
 func databaseFeedToFeedDto(dbFeed database.Feed) FeedDto {
+	var lastFetchedAt *time.Time
+	if dbFeed.LastFetchedAt.Valid {
+		lastFetchedAt = &dbFeed.LastFetchedAt.Time
+	} else {
+		lastFetchedAt = nil
+	}
 	return FeedDto{
-		Id:        dbFeed.ID,
-		CreatedAt: dbFeed.CreatedAt,
-		UpdatedAt: dbFeed.UpdatedAt,
-		Name:      dbFeed.Name,
-		Url:       dbFeed.Url,
-		UserId:    dbFeed.UserID,
+		Id:            dbFeed.ID,
+		CreatedAt:     dbFeed.CreatedAt,
+		UpdatedAt:     dbFeed.UpdatedAt,
+		Name:          dbFeed.Name,
+		Url:           dbFeed.Url,
+		UserId:        dbFeed.UserID,
+		LastFetchedAt: lastFetchedAt,
 	}
 }
 

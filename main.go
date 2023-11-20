@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type config struct {
@@ -56,6 +57,10 @@ func main() {
 		Addr:    ":" + port,
 		Handler: mainRouter,
 	}
+
+	const collectionConcurrency = 10
+	const collectionInterval = time.Minute
+	go startScraping(config.DB, collectionConcurrency, collectionInterval)
 
 	fmt.Println("Running the server on port: " + port)
 	log.Fatal(srv.ListenAndServe())
