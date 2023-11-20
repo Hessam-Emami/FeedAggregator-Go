@@ -63,5 +63,31 @@ func (c config) handlerPostFeed(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	respondWithJSON(writer, http.StatusOK, databaseFeedToFeedDto(feed))
+	feedFollowUUID, err := uuid.NewUUID()
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "Internal server error")
+		fmt.Println("Error creating uuid: " + err.Error())
+		return
+	}
+
+	feedFollow, err := c.DB.CreateFeedFollow(request.Context(), database.CreateFeedFollowParams{
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		FeedID:    feed.ID,
+		UserID:    dbUsr.ID,
+		ID:        feedFollowUUID.String(),
+	})
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "Internal server error")
+		fmt.Println("Error creating feed follow: " + err.Error())
+		return
+	}
+
+	respondWithJSON(writer, http.StatusOK, struct {
+		Feed       FeedDto       `json:"feed"`
+		FeedFollow FeedFollowDto `json:"feed_follow"`
+	}{
+		FeedFollow: databaseFeedFollowTo(feedFollow),
+		Feed:       databaseFeedToFeedDto(feed),
+	})
 }

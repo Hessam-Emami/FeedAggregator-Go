@@ -44,11 +44,11 @@ func databaseFeedToFeedDto(dbFeed database.Feed) FeedDto {
 }
 
 type FeedFollowDto struct {
-	Id        string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	FeedID    string
-	UserID    string
+	Id        string    `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	FeedID    string    `json:"feed_id"`
+	UserID    string    `json:"user_id"`
 }
 
 func databaseFeedFollowTo(dbFeed database.FeedFollow) FeedFollowDto {

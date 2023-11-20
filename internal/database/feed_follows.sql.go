@@ -42,3 +42,48 @@ func (q *Queries) CreateFeedFollow(ctx context.Context, arg CreateFeedFollowPara
 	)
 	return i, err
 }
+
+const deleteFeedFollow = `-- name: DeleteFeedFollow :one
+DELETE FROM feed_follows WHERE id = $1
+RETURNING true AS success
+`
+
+func (q *Queries) DeleteFeedFollow(ctx context.Context, id string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, deleteFeedFollow, id)
+	var success bool
+	err := row.Scan(&success)
+	return success, err
+}
+
+const getFeedFollowsByUserId = `-- name: GetFeedFollowsByUserId :many
+SELECT id, created_at, updated_at, feed_id, user_id FROM feed_follows WHERE user_id = $1
+`
+
+func (q *Queries) GetFeedFollowsByUserId(ctx context.Context, userID string) ([]FeedFollow, error) {
+	rows, err := q.db.QueryContext(ctx, getFeedFollowsByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FeedFollow
+	for rows.Next() {
+		var i FeedFollow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.FeedID,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
